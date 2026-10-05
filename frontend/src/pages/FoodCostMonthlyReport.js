@@ -55,6 +55,8 @@ const FoodCostMonthlyReport = () => {
         if (reportMonth) {
             fetchReport(reportMonth);
         }
+        // Only refetch when the month changes; the user-name filter updates on every keystroke.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reportMonth]);
 
     const fetchReport = async (monthValue) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -24,11 +24,7 @@ const Utilities = () => {
         notes: ''
     });
 
-    useEffect(() => {
-        fetchBills();
-    }, [reportMonth]);
-
-    const fetchBills = async () => {
+    const fetchBills = useCallback(async () => {
         try {
             const params = new URLSearchParams();
             if (reportMonth) {
@@ -40,7 +36,11 @@ const Utilities = () => {
         } catch (error) {
             toast.error('Failed to fetch utility bills');
         }
-    };
+    }, [reportMonth]);
+
+    useEffect(() => {
+        fetchBills();
+    }, [fetchBills]);
 
     // Calculate total
     const calculateTotal = () => {
