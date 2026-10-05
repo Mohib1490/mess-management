@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
@@ -6,19 +6,19 @@ import ReportFooter from '../components/ReportFooter';
 import printReportDocument from '../utils/printReport';
 import { useAuth } from '../context/AuthContext';
 
+const formatMonthName = (year, monthNum) => {
+    const monthName = new Date(year, Number(monthNum) - 1, 1).toLocaleString('default', { month: 'long' });
+    return monthName;
+};
+
 const MonthlyReport = () => {
     const { admin } = useAuth();
     const isViewer = admin?.role === 'viewer';
     const [searchParams, setSearchParams] = useSearchParams();
     const [reportMonth, setReportMonth] = useState('');
-    const [reports, setReports] = useState([]);
     const [currentReport, setCurrentReport] = useState(null);
     const [loading, setLoading] = useState(false);
     const [statusFilter, setStatusFilter] = useState('all');
-
-    useEffect(() => {
-        fetchReports();
-    }, []);
 
     useEffect(() => {
         const monthParam = searchParams.get('month');
@@ -32,18 +32,7 @@ const MonthlyReport = () => {
         }
     }, [searchParams, setSearchParams]);
 
-    useEffect(() => {
-        if (reportMonth) {
-            fetchReport(reportMonth);
-        }
-    }, [reportMonth]);
-
-    const formatMonthName = (year, monthNum) => {
-        const monthName = new Date(year, Number(monthNum) - 1, 1).toLocaleString('default', { month: 'long' });
-        return monthName;
-    };
-
-    const fetchReport = async (value) => {
+    const fetchReport = useCallback(async (value) => {
         try {
             setLoading(true);
             const [year, monthNum] = value.split('-');
@@ -52,25 +41,19 @@ const MonthlyReport = () => {
                 ? await API.get('/calculations/preview', { params: { month, year: Number(year) } })
                 : await API.post('/calculations/generate', { month, year: Number(year) });
             setCurrentReport(response.data);
-            if (!isViewer) {
-                await fetchReports();
-            }
         } catch (error) {
             console.error('Failed to fetch report for month', error);
             toast.error('Failed to load the selected month report.');
         } finally {
             setLoading(false);
         }
-    };
+    }, [isViewer]);
 
-    const fetchReports = async () => {
-        try {
-            const response = await API.get('/calculations');
-            setReports(response.data);
-        } catch (error) {
-            toast.error('Failed to fetch reports');
+    useEffect(() => {
+        if (reportMonth) {
+            fetchReport(reportMonth);
         }
-    };
+    }, [reportMonth, fetchReport]);
 
     const generateReport = async () => {
         if (!reportMonth) {

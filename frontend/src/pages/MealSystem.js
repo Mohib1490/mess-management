@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import { useAppContext } from '../context/AppContext';
@@ -27,11 +27,7 @@ const MealSystem = () => {
         admin?.role !== 'member' || m._id === admin._id
     ));
 
-    useEffect(() => {
-        fetchMeals();
-    }, [selectedDate]);
-
-    const fetchMeals = async () => {
+    const fetchMeals = useCallback(async () => {
         try {
             setLoading(true);
             const response = await API.get(`/meals/date/${selectedDate}`);
@@ -51,7 +47,11 @@ const MealSystem = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedDate]);
+
+    useEffect(() => {
+        fetchMeals();
+    }, [fetchMeals]);
 
     const openMealReportWindow = () => {
         navigate(`/meal-monthly-report?month=${reportMonth}`);

@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
 
 
 
@@ -24,41 +22,18 @@ const Members = () => {
         isActive: true
     });
 
-    const [stats, setStats] = useState({
-            totalMembers: 0,
-            activeMembers: 0,
-            monthlyRent: 0,
-            monthlyFoodCost: 0,
-            monthlyUtilityCost: 0,
-            cookSalary: 0,
-            totalMeals: 0,
-            mealRate: 0
-        });
-
     useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const membersRes = await API.get('/members');
+                setMembers(membersRes.data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
         fetchData();
-    }, []);
-
-    const fetchData = async () => {
-        try {
-            const membersRes = await API.get('/members');
-            const membersData = membersRes.data;
-            setMembers(membersData);
-
-            setStats({
-                totalMembers: membersData.length,
-                activeMembers: membersData.filter(m => m.isActive).length,
-                monthlyRent: membersData.reduce((sum, m) => sum + (m.isActive ? m.seatRent : 0), 0),
-                monthlyFoodCost: 0,
-                monthlyUtilityCost: 0,
-                cookSalary: 0,
-                totalMeals: 0,
-                mealRate: 0
-            });
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        }
-    };
+    }, [setMembers]);
 
 
     const resetForm = () => {

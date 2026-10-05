@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import { useAppContext } from '../context/AppContext';
@@ -24,11 +24,7 @@ const FoodCost = () => {
         deduction: 0
     });
 
-    useEffect(() => {
-        fetchFoodCosts();
-    }, [reportMonth, reportUserName]);
-
-    const fetchFoodCosts = async () => {
+    const fetchFoodCosts = useCallback(async () => {
         try {
             setLoading(true);
             const params = new URLSearchParams();
@@ -49,7 +45,11 @@ const FoodCost = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [reportMonth, reportUserName]);
+
+    useEffect(() => {
+        fetchFoodCosts();
+    }, [fetchFoodCosts]);
 
     const handleDeleteCost = async (id) => {
         if (!window.confirm('Delete this food cost record?')) return;
