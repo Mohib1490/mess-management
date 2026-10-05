@@ -3,43 +3,46 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
-// Load env vars
 dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : undefined));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://mohib:mohib@cluster0.rk1ijvc.mongodb.net/mess';
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is required');
+}
 
 mongoose.connect(MONGODB_URI)
-.then(() => {
-    console.log('✅ Successfully connected to MongoDB Atlas');
-    console.log('📁 Database: bachelor-mess');
-})
-.catch((error) => {
-    console.error('❌ MongoDB connection error:', error.message);
-    process.exit(1);
-});
+    .then(() => {
+        console.log('✅ Successfully connected to MongoDB Atlas');
+        console.log('📁 Database: bachelor-mess');
+    })
+    .catch((error) => {
+        console.error('❌ MongoDB connection error:', error.message);
+        process.exit(1);
+    });
 
-// Monitor database connection
 mongoose.connection.on('connected', () => {
     console.log('🟢 Mongoose connected to MongoDB Atlas');
 });
 
-mongoose.connection.on('error', (err) => {
-    console.log('🔴 Mongoose connection error:', err);
+mongoose.connection.on('error', (error) => {
+    console.log('🔴 Mongoose connection error:', error);
 });
 
 mongoose.connection.on('disconnected', () => {
     console.log('🟡 Mongoose disconnected');
 });
 
-// Import Routes
 const memberRoutes = require('./routes/memberRoutes');
 const utilityRoutes = require('./routes/utilityRoutes');
 const foodRoutes = require('./routes/foodRoutes');
@@ -48,8 +51,6 @@ const mealRoutes = require('./routes/mealRoutes');
 const calculationRoutes = require('./routes/calculationRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 
-
-// Use Routes
 app.use('/api/members', memberRoutes);
 app.use('/api/utilities', utilityRoutes);
 app.use('/api/food', foodRoutes);
@@ -57,13 +58,8 @@ app.use('/api/cook', cookRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/calculations', calculationRoutes);
 app.use('/api/payments', paymentRoutes);
-
-// Add this with other routes
 app.use('/api/admin', require('./routes/adminRoutes'));
 
-
-
-// Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'OK',
@@ -72,13 +68,12 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Unhandled server error:', err);
+app.use((error, req, res, next) => {
+    console.error('Unhandled server error:', error);
     res.status(500).json({
         success: false,
-        message: err.message || 'Something went wrong!',
-        error: err
+        message: error.message || 'Something went wrong!',
+        error
     });
 });
 
@@ -86,5 +81,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
-    console.log(`📍 API URL: http://localhost:${PORT}/api`);
+    console.log(`📍 API URL: listening on port ${PORT}`);
 });
